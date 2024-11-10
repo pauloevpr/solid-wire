@@ -1,11 +1,11 @@
 
 {
   "name": "solid-wire",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Solid Wire is a native SolidJS library for building local-first apps with SolidJS and SolidStart.",
   "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
