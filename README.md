@@ -1,3 +1,4 @@
+# Solid Wire [![npm version](https://img.shields.io/npm/v/solid-wire.svg)](https://www.npmjs.com/package/solid-wire)
 
 Solid Wire is a native SolidJS library for building local-first apps with SolidJS and SolidStart. Unlike many of the alternative local-first libraries out there, Solid Wire is designed and built from the ground up specifically to work with SolidJS and SolidStart, and to take full advantage of some powerful primitives such as `createAsync` and server functions (with `use server`).
 
