@@ -82,7 +82,9 @@ export function WireStoreService<Definition extends WireStoreDefinition, Extenti
 			})
 
 			let syncCursor = localStorage.getItem(cursorKey) || undefined
-			let { records, syncCursor: updatedSyncCursor } = await props.config.sync(unsynced, namespace, syncCursor)
+			let { records, syncCursor: updatedSyncCursor } = await props.config.sync(
+				{ records: unsynced, namespace, syncCursor }
+			)
 
 			let updated = records
 				.filter(record => record.state === "updated")

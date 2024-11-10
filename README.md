@@ -286,7 +286,7 @@ const store = createWireStore({
   definition: {
     todo: {} as Todo
   },
-  sync: async (records, namspace, syncCursor) => {
+  sync: async ({records, namspace, syncCursor}) => {
     "use server"
     return { records: [], syncCursor: "" }
   },
@@ -310,7 +310,7 @@ const store = createWireStore({
   definition: {
     todo: {} as Todo
   },
-  sync: async (records) => {
+  sync: async ({records}) => {
     "use server"
     let updated = records.filter(record => record.state === "updated")
     await db.saveTodos(
@@ -344,7 +344,7 @@ const store = createWireStore({
   definition: {
     todo: {} as Todo
   },
-  sync: async (records) => {
+  sync: async ({records}) => {
     "use server"
     let updated = records.filter(record => record.state === "updated")
     let deleted = records.filter(record => record.state === "deleted")
@@ -713,7 +713,7 @@ You can start adding syncing logic to your store by implementing the `sync` func
 
 const store = createWireStore({
   /* setup ommited */
-  sync: async (records, namspace, syncCursor) => {
+  sync: async ({records, namspace, syncCursor}) => {
     "use server"
     return { records: [], syncCursor: "" }
   },
@@ -766,7 +766,7 @@ const store = createWireStore({
   definition: {
     todo: {} as Todo
   },
-  sync: async (records) => {
+  sync: async ({records}) => {
     "use server"
     records = validateRecordsMetadata(records, store.types())
     let updated = records.filter(record => record.state === "updated" && validate.todo(record.data))
@@ -825,7 +825,7 @@ const store = createWireStore({
   definition: {
     todo: {} as Todo
   },
-  sync: async (records, _, syncCursor) => {
+  sync: async ({records, syncCursor}) => {
     "use server"
     records = validateRecordsMetadata(records, store.types())
     let syncTimestamp = new Date(syncCursor || 0)
@@ -981,7 +981,7 @@ You can then use that namespace in your `sync` function:
 
 const store = createWireStore({
   /* setup ommited */
-  sync: async (records, namespace, syncCursor) => {
+  sync: async ({records, namespace, syncCursor}) => {
     "use server"
     /* syncing logic goes here */
   },
@@ -1021,7 +1021,7 @@ When it comes to syncing, Solid Wire will send the provided namespace everytime 
 
 const store = createWireStore({
   /* setup ommited */
-  sync: async (records, namespace, syncCursor) => {
+  sync: async ({records, namespace, syncCursor}) => {
     "use server"
     // getUser throws a redirect when user is not authenticated
     let user = await getUser() 

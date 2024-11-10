@@ -46,12 +46,11 @@ export type WireStoreAPI<Definition extends WireStoreDefinition, Type extends ke
 	all(): Promise<Definition[Type][]>
 }
 
-
 export type WireStoreConfig<Definition extends WireStoreDefinition, Extension> = {
 	name: string,
 	definition: Definition,
 	extend?: (store: WireStore<Definition>) => Extension
-	sync: (records: UnsyncedRecord<Definition>[], namespace: string, syncCursor?: string) => Promise<{ records: SyncedRecord[], syncCursor?: string }>,
+	sync: (request: { records: UnsyncedRecord<Definition>[], namespace: string, syncCursor?: string }) => Promise<{ records: SyncedRecord[], syncCursor?: string }>,
 }
 
 export type WireStore<Definition extends WireStoreDefinition> = {
