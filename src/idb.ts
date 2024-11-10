@@ -72,7 +72,7 @@ export function useIdb<Definition extends WireStoreDefinition>(name: string, rec
 		if (!ids.length) return
 		const db = await open()
 		let records = await Promise.all(ids.map(id => getInternal(id)))
-		let recordTypes = new Set(records.filter(item => !!item).map(item => item.type))
+		let recordTypes = new Set(records.filter(item => !!item).map(item => item!.type))
 		await Promise.all(ids.map((id) => new Promise((resolve, reject) => {
 			const request = db.transaction("records", "readwrite").objectStore("records").delete(id)
 			request.onsuccess = function() {

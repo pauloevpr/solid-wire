@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "declaration": true,
+    "declarationDir": "./dist",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "lib": ["dom", "esnext"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
