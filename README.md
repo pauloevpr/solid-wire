@@ -1,4 +1,4 @@
-# Solid Wire [![npm version](https://img.shields.io/npm/v/solid-wire.svg)](https://www.npmjs.com/package/solid-wire)
+# Solid Wire [![npm version](https://img.shields.io/npm/solid-wire.svg)](https://www.npmjs.com/packagsolid-wire)
 
 Solid Wire is a native SolidJS library for building local-first apps with SolidJS and SolidStart. Unlike many of the alternative local-first libraries out there, Solid Wire is designed and built from the ground up specifically to work with SolidJS and SolidStart, and to take full advantage of some powerful primitives such as `createAsync` and server functions (with `use server`).
 
@@ -38,10 +38,10 @@ npm install solid-wire
 
 Solid Wire uses the concept of Wire Store for working with your data. A Wire Store is a data store that "wires" the data that is locally stored in the browser with the data that is stored on your server/database.
 
-Let's start by a creating a new store using the `createWireStore` function. In this example, we are creating a store for a simple Todo app:
+Let's start by a creating a new store using the `createWireStore` function. In this example, we are creating a store for a simple Todo app `src/lib/store`.
 
 ```ts
-import { createWireStore } from "./solid-wire";
+import { createWireStore } from "solid-wire";
 
 export const store = createWireStore({
     name: "todo-app",
@@ -54,7 +54,7 @@ Now we need to define which type of data we are going to store. Solid Wire allow
 
 
 ```jsx
-import { createWireStore } from "./solid-wire";
+import { createWireStore } from "solid-wire";
 
 type Todo = { title: string, done: boolean }
 
@@ -71,52 +71,35 @@ export const store = createWireStore({
 
 ## Registering the store
 
-Solid Wire uses the popular [Provider/Use](https://docs.solidjs.com/concepts/context) pattern to make the store available in your components tree. We start by "providing" the store somewhere up in the tree. For this example, let't provide the store only on this particular todo page (`src/routes/todo.tsx`):
+Solid Wire uses the popular [Provider/Use](https://docs.solidjs.com/concepts/context) pattern to make the store available in your components tree. We start by "providing" the store somewhere up in the tree. For this example, let't provide the store in the root App component (`src/app.tsx`):
 
 ```jsx
-import { createWireStore } from "solid-wire"
+import { store } from "./lib/store";
 
-type Todo = { title: string, done: boolean }
-
-const store = createWireStore({
-  name: "todo-app",
-  definition: {
-    todo: {} as Todo
-  },
-})
-
-export default function TodoPage() {
+export default function App() {
   return (
-    <store.Provider>
-        {/* nothing here yet */}
-    </store.Provider>
-  )
+    <Router
+      root={props => (
+        <Suspense>
+          <store.Provider>
+            {props.children}
+          </store.Provider>
+        </Suspense>
+      )}
+    >
+      <FileRoutes />
+    </Router>
+  );
 }
 ```
 
-With the store available in the components tree, we can access it from any components using `store.use()`. Let's add a new component to list our todos:
+With the store available in the components tree, we can access it from any components using `store.use()`:
 
 ```jsx
 import { createWireStore } from "solid-wire"
+import { store } from "./lib/store";
 
-type Todo = { title: string, done: boolean }
-
-const store = createWireStore({
-  name: "todo-app",
-  definition: {
-    todo: {} as Todo
-  },
-})
-
-export default function TodoPage() {
-  return (
-    <store.Provider>
-      <TodoList />
-    </store.Provider>
-  )
-}
-
-function TodoList() {
+export default function TodoList() {
   let local = store.use()
   return (
     <ul>
@@ -130,7 +113,7 @@ function TodoList() {
 With the store in place, we can retrieve all todos using `store.todo.all()`. Because this is an asnyc function, we are going to wrap it using Solid's `createAsync` helper so we can wait until the data is loaded before we can render the list of todos:
 
 ```jsx
-/* store setup ommited */
+/* imports ommited */
 
 function TodoList() {
   let local = store.use()
