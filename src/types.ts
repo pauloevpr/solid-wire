@@ -51,6 +51,7 @@ export type WireStoreConfig<Definition extends WireStoreDefinition, Extension> =
 	definition: Definition,
 	extend?: (store: WireStore<Definition>) => Extension
 	sync: (request: { records: UnsyncedRecord<Definition>[], namespace: string, syncCursor?: string }) => Promise<{ records: SyncedRecord[], syncCursor?: string }>,
+	hooks?: Hooks<Definition>,
 }
 
 export type WireStore<Definition extends WireStoreDefinition> = {
@@ -66,3 +67,9 @@ export type WireStoreProvider = (props: ParentProps<{
 	namespace?: string,
 	periodic?: true | number
 }>) => JSX.Element
+
+export type Hooks<Definition extends WireStoreDefinition> = {
+	beforeSave?: (type: keyof Definition & string, data: any) => void
+	beforeRead?: (type: keyof Definition & string, data: any) => void
+}
+

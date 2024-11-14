@@ -1019,6 +1019,10 @@ const store = createWireStore({
 
 > A common question that arises from the example above is - if the namespace is the same as the user ID, why do I need an extra step to get the current user? And why do I need to check it user ID really matches the namespace? The answer is simple - for security reasons. Being a server function, the `sync` function is very much a public API endpoint, which means we should never trust the inputs coming in. The `getUser` function in the example uses [SolidStart sessions](https://docs.solidjs.com/solid-start/advanced/session#sessions) to determine the current user, which is the correct way to check if the user is authenticated.
 
+# Hooks
+
+TODO: explain how to use hooks to transform the data when writing/reading; use encrytion use case as example
+
 # Auth
 
 TBD: explain more about using namespaces to isolate indexed-db instances?

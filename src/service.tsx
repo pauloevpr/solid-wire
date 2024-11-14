@@ -13,7 +13,7 @@ export function WireStoreService<Definition extends WireStoreDefinition, Extenti
 	let context = createMemo(() => {
 		let name = `wire-store:${props.config.name}:${props.namespace}`
 		let context: WireStoreContextValue = {
-			idb: useIdb(name, props.recordTypes),
+			idb: useIdb(name, props.recordTypes, props.config.hooks),
 			sync: triggerSync
 		}
 		return context
