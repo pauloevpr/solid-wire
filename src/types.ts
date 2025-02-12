@@ -55,7 +55,15 @@ export type WireStoreConfig<Definition extends WireStoreDefinition, Extension> =
 
 export type WireStore<Definition extends WireStoreDefinition> = {
 	[Type in keyof Definition & string]: WireStoreAPI<Definition, Type>
+} & {
+	utils: {
+		createReactiveApi: <T extends Function>(
+			trackingTypes: (keyof Definition & string)[],
+			fn: T
+		) => T
+	}
 }
+
 type Override<A, B> = Omit<A, keyof B> & B;
 
 export type ExtendableWireStore<Definition extends WireStoreDefinition, Extension> = {

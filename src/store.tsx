@@ -1,6 +1,6 @@
 import { isServer } from "solid-js/web"
-import { ExtendableWireStore, Hooks, WireStoreConfig, WireStoreContext, WireStoreDefinition, WireStoreProvider } from "./types"
-import { ParentProps, useContext } from "solid-js"
+import { ExtendableWireStore, Hooks, WireStore, WireStoreConfig, WireStoreContext, WireStoreDefinition, WireStoreProvider } from "./types"
+import { ParentProps, Signal, useContext } from "solid-js"
 import { WireStoreService } from "./service"
 
 export function createWireStore<Definition extends WireStoreDefinition, Extension>(
@@ -43,6 +43,22 @@ export function createWireStore<Definition extends WireStoreDefinition, Extensio
       api[type] = context.idb.public(type)
     }
     if (config.extend) {
+      (api as WireStore<Definition>).utils = {
+        createReactiveApi: <T extends Function>(
+          trackingTypes: (keyof Definition & string)[],
+          fn: T
+        ): T => {
+          let proxy = new Proxy(fn, {
+            apply(target, thisArg, args) {
+              for (let type of trackingTypes) {
+                context!.idb.internal.tracker[type][0]()
+              }
+              return Reflect.apply(target, thisArg, args);
+            },
+          })
+          return proxy as T
+        }
+      }
       let extensions: any = config.extend(api)
       api = {}
       for (let type of recordTypes) {

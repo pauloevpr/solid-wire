@@ -18,15 +18,6 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		tracker[type] = createSignal("")
 	}
 
-	let listen = (type: string) => {
-		if (type in tracker) {
-			let readSignal = tracker[type][0]
-			readSignal()
-		} else {
-			console.warn(`attempt to listen for changes for an unknown type ${type}`)
-		}
-	}
-
 	let notify = (type: string) => {
 		if (type in tracker) {
 			untrack(() => {
@@ -172,6 +163,17 @@ export function useIdb<Definition extends WireStoreDefinition>(
 
 	function publicApi(type: Type): WireStoreAPI<Definition, Type> {
 
+
+		function createReactiveApi<T extends Function>(fn: T): T {
+			let proxy = new Proxy(fn, {
+				apply(target, thisArg, args) {
+					tracker[type][0]()
+					return Reflect.apply(target, thisArg, args);
+				},
+			})
+			return proxy as T
+		}
+
 		async function softDelete(...ids: string[]): Promise<void> {
 			if (!ids.length) return
 			await Promise.all(
@@ -200,43 +202,45 @@ export function useIdb<Definition extends WireStoreDefinition>(
 			notifyUnsyncedChanges()
 		}
 
-		async function get<T>(id: string): Promise<T | undefined> {
-			listen(type)
-			return new Promise<T>(async (resolve, reject) => {
-				const db = await open()
-				const request = db.transaction("records", "readonly").objectStore("records").get(id)
-				request.onsuccess = async () => {
-					await callHooks("beforeRead", request.result)
-					let data = request.result?.data
-					if (request.result?.deleted === true) {
-						data = undefined
+		let get = createReactiveApi(
+			async <T>(id: string): Promise<T | undefined> => {
+				return new Promise<T>(async (resolve, reject) => {
+					const db = await open()
+					const request = db.transaction("records", "readonly").objectStore("records").get(id)
+					request.onsuccess = async () => {
+						await callHooks("beforeRead", request.result)
+						let data = request.result?.data
+						if (request.result?.deleted === true) {
+							data = undefined
+						}
+						resolve(data)
 					}
-					resolve(data)
-				}
-				request.onerror = (e: any) => {
-					reject(`error when reading record '${id}: ${e.target.error}`)
-				}
-			})
-		}
+					request.onerror = (e: any) => {
+						reject(`error when reading record '${id}: ${e.target.error}`)
+					}
+				})
+			}
+		)
 
-		async function all(): Promise<Definition[Type][]> {
-			listen(type)
-			return new Promise<Definition[Type][]>(async (resolve, reject) => {
-				const db = await open()
-				const request = db.transaction("records", "readonly").objectStore("records").index("type").getAll(type)
-				request.onsuccess = async () => {
-					let items: Array<IdbRecord> = request.result
-					let filtered = items.filter(item => item.deleted !== true)
-					await Promise.all(
-						filtered.map(item => callHooks("beforeRead", item))
-					)
-					resolve(filtered.map(item => ({ ...item.data })))
-				}
-				request.onerror = (e: any) => {
-					reject(`error when reading records of type '${type}': ${e.target.error}`)
-				}
-			})
-		}
+		let all = createReactiveApi(
+			async (): Promise<Definition[Type][]> => {
+				return new Promise<Definition[Type][]>(async (resolve, reject) => {
+					const db = await open()
+					const request = db.transaction("records", "readonly").objectStore("records").index("type").getAll(type)
+					request.onsuccess = async () => {
+						let items: Array<IdbRecord> = request.result
+						let filtered = items.filter(item => item.deleted !== true)
+						await Promise.all(
+							filtered.map(item => callHooks("beforeRead", item))
+						)
+						resolve(filtered.map(item => ({ ...item.data })))
+					}
+					request.onerror = (e: any) => {
+						reject(`error when reading records of type '${type}': ${e.target.error}`)
+					}
+				})
+			}
+		)
 
 		return {
 			delete: softDelete,
@@ -254,6 +258,7 @@ export function useIdb<Definition extends WireStoreDefinition>(
 			getUnsynced: getRawUnhookedUnsyncedRecords,
 			put,
 			purge,
+			tracker
 		},
 	}
 }
