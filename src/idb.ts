@@ -3,10 +3,11 @@ import { Hooks, IdbRecord, WireStoreAPI, WireStoreDefinition } from "./types"
 
 export type Idb = ReturnType<typeof useIdb>
 
+
 export function useIdb<Definition extends WireStoreDefinition>(
 	name: string,
 	recordTypes: (keyof Definition)[],
-	hooks?: Hooks<Definition>[]
+	hooks?: Hooks[]
 ) {
 	type Type = keyof Definition & string
 	let db: IDBDatabase | undefined
@@ -58,11 +59,13 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		}, 1)
 	}
 
-	function callHooks(stage: "beforeRead" | "beforeSave", record: IdbRecord) {
+	async function callHooks(stage: "beforeRead" | "beforeSave", record: IdbRecord) {
 		if (!hooks || !record || record?.deleted) return
-		for (let hook of hooks) {
-			hook[stage]?.(record.type, record.data)
-		}
+		await Promise.all(
+			hooks
+				.filter(hook => typeof hook[stage] === "function")
+				.map(hook => hook[stage]!(record.type, record.data))
+		)
 	}
 
 	async function getRawUnhookedRecord(id: string): Promise<IdbRecord | undefined> {
@@ -102,8 +105,8 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		let recordTypes = new Set(records.map(item => item.type))
 		const db = await open()
 		await Promise.all(
-			records.map((record) => new Promise((resolve, reject) => {
-				callHooks("beforeSave", record)
+			records.map((record) => new Promise(async (resolve, reject) => {
+				await callHooks("beforeSave", record)
 				const request = db.transaction("records", "readwrite").objectStore("records").put(record)
 				request.onsuccess = () => {
 					recordTypes.forEach(type => notify(type))
@@ -116,15 +119,12 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		)
 	}
 
-	async function getUnsynced(): Promise<IdbRecord[]> {
+	async function getRawUnhookedUnsyncedRecords(): Promise<IdbRecord[]> {
 		const db = await open()
 		return new Promise<IdbRecord[]>(async (resolve, reject) => {
 			const request = db.transaction("records", "readonly").objectStore("records").index("unsynced").getAll("true")
 			request.onsuccess = () => {
 				let items: Array<IdbRecord> = request.result
-				for (let item of items) {
-					callHooks("beforeRead", item)
-				}
 				resolve(items)
 			}
 			request.onerror = (e: any) => {
@@ -205,8 +205,8 @@ export function useIdb<Definition extends WireStoreDefinition>(
 			return new Promise<T>(async (resolve, reject) => {
 				const db = await open()
 				const request = db.transaction("records", "readonly").objectStore("records").get(id)
-				request.onsuccess = () => {
-					callHooks("beforeRead", request.result)
+				request.onsuccess = async () => {
+					await callHooks("beforeRead", request.result)
 					let data = request.result?.data
 					if (request.result?.deleted === true) {
 						data = undefined
@@ -224,15 +224,13 @@ export function useIdb<Definition extends WireStoreDefinition>(
 			return new Promise<Definition[Type][]>(async (resolve, reject) => {
 				const db = await open()
 				const request = db.transaction("records", "readonly").objectStore("records").index("type").getAll(type)
-				request.onsuccess = () => {
+				request.onsuccess = async () => {
 					let items: Array<IdbRecord> = request.result
-					let data: Array<Definition[Type]> = items
-						.filter(item => item.deleted !== true)
-						.map(item => {
-							callHooks("beforeRead", item)
-							return { ...item.data }
-						})
-					resolve(data)
+					let filtered = items.filter(item => item.deleted !== true)
+					await Promise.all(
+						filtered.map(item => callHooks("beforeRead", item))
+					)
+					resolve(filtered.map(item => ({ ...item.data })))
 				}
 				request.onerror = (e: any) => {
 					reject(`error when reading records of type '${type}': ${e.target.error}`)
@@ -253,7 +251,7 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		internal: {
 			close,
 			listenToUnsyncedChanges,
-			getUnsynced,
+			getUnsynced: getRawUnhookedUnsyncedRecords,
 			put,
 			purge,
 		},

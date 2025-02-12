@@ -1,5 +1,5 @@
 import { isServer } from "solid-js/web"
-import { ExtendableWireStore, WireStoreConfig, WireStoreContext, WireStoreDefinition, WireStoreProvider } from "./types"
+import { ExtendableWireStore, Hooks, WireStoreConfig, WireStoreContext, WireStoreDefinition, WireStoreProvider } from "./types"
 import { ParentProps, useContext } from "solid-js"
 import { WireStoreService } from "./service"
 
@@ -19,7 +19,8 @@ export function createWireStore<Definition extends WireStoreDefinition, Extensio
 
   let Provider: WireStoreProvider = (props: ParentProps<{
     namespace?: string,
-    periodic?: true | number
+    periodic?: true | number,
+    hooks?: Hooks[]
   }>) => {
     return (
       <WireStoreService<Definition, Extension>
@@ -27,6 +28,7 @@ export function createWireStore<Definition extends WireStoreDefinition, Extensio
         config={config}
         recordTypes={recordTypes}
         periodic={props.periodic}
+        hooks={props.hooks}
       >
         {props.children}
       </WireStoreService>

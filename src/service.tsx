@@ -1,5 +1,5 @@
 import { createEffect, createMemo, onCleanup, onMount, ParentProps } from "solid-js"
-import { IdbRecord, UnsyncedRecord, WireStoreConfig, WireStoreContext, WireStoreContextValue, WireStoreDefinition } from "./types"
+import { Hooks, IdbRecord, UnsyncedRecord, WireStoreConfig, WireStoreContext, WireStoreContextValue, WireStoreDefinition } from "./types"
 import { Idb, useIdb } from "./idb"
 
 export function WireStoreService<Definition extends WireStoreDefinition, Extention>(
@@ -7,13 +7,14 @@ export function WireStoreService<Definition extends WireStoreDefinition, Extenti
 		namespace: string,
 		config: WireStoreConfig<Definition, Extention>,
 		recordTypes: (keyof Definition)[],
-		periodic?: true | number
+		periodic?: true | number,
+		hooks?: Hooks[]
 	}>
 ) {
 	let context = createMemo(() => {
 		let name = `wire-store:${props.config.name}:${props.namespace}`
 		let context: WireStoreContextValue = {
-			idb: useIdb(name, props.recordTypes, props.config.hooks),
+			idb: useIdb(name, props.recordTypes, props.hooks),
 			sync: triggerSync
 		}
 		return context
