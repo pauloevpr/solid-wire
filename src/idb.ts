@@ -75,7 +75,8 @@ export function useIdb<Definition extends WireStoreDefinition>(
 	async function purge(ids: string[]) {
 		if (!ids.length) return
 		const db = await open()
-		await Promise.all(ids.map(id => getRawUnhookedRecord(id)))
+		let records = await Promise.all(ids.map(id => getRawUnhookedRecord(id)))
+		let recordTypes = new Set(records.filter(item => !!item).map(item => item!.type))
 		await Promise.all(ids.map((id) => new Promise((resolve, reject) => {
 			const request = db.transaction("records", "readwrite").objectStore("records").delete(id)
 			request.onsuccess = function() {
@@ -85,6 +86,9 @@ export function useIdb<Definition extends WireStoreDefinition>(
 				reject("Error deleting record: " + event.target.error);
 			};
 		})))
+		batch(() => {
+			recordTypes.forEach(type => notify(type))
+		})
 	}
 
 	async function put(
