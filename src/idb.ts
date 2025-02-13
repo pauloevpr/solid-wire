@@ -1,4 +1,4 @@
-import { createSignal, Signal, untrack } from "solid-js"
+import { batch, createSignal, Signal, untrack } from "solid-js"
 import { Hooks, IdbRecord, WireStoreAPI, WireStoreDefinition } from "./types"
 
 export type Idb = ReturnType<typeof useIdb>
@@ -80,13 +80,15 @@ export function useIdb<Definition extends WireStoreDefinition>(
 		await Promise.all(ids.map((id) => new Promise((resolve, reject) => {
 			const request = db.transaction("records", "readwrite").objectStore("records").delete(id)
 			request.onsuccess = function() {
-				recordTypes.forEach(type => notify(type))
 				resolve(undefined);
 			};
 			request.onerror = function(event: any) {
 				reject("Error deleting record: " + event.target.error);
 			};
 		})))
+		batch(() => {
+			recordTypes.forEach(type => notify(type))
+		})
 	}
 
 	async function put(
@@ -100,7 +102,6 @@ export function useIdb<Definition extends WireStoreDefinition>(
 				await callHooks("beforeSave", record)
 				const request = db.transaction("records", "readwrite").objectStore("records").put(record)
 				request.onsuccess = () => {
-					recordTypes.forEach(type => notify(type))
 					resolve(undefined)
 				}
 				request.onerror = (e: any) => {
@@ -108,6 +109,9 @@ export function useIdb<Definition extends WireStoreDefinition>(
 				}
 			}))
 		)
+		batch(() => {
+			recordTypes.forEach(type => notify(type))
+		})
 	}
 
 	async function getRawUnhookedUnsyncedRecords(): Promise<IdbRecord[]> {
