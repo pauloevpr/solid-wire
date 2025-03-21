@@ -1,5 +1,5 @@
-import { batch, createSignal, Signal, untrack } from "solid-js"
-import { Hooks, IdbRecord, WireStoreAPI, WireStoreDefinition } from "./types"
+import { batch, createEffect, createSignal, Signal, untrack } from "solid-js"
+import { Hooks, IdbRecord, WireStoreAPI, WireStoreCache, WireStoreDefinition } from "./types"
 
 export type Idb = ReturnType<typeof useIdb>
 
@@ -16,6 +16,22 @@ export function useIdb<Definition extends WireStoreDefinition>(
 	let tracker = {} as Record<keyof Definition, Signal<string>>
 	for (let type of recordTypes) {
 		tracker[type] = createSignal("")
+	}
+
+	let cacheEnabled = false
+	let cache = {} as WireStoreCache<Definition>
+	for (let rawType of recordTypes) {
+		let type = rawType as Type
+		let api = publicApi(type)
+		let [get, set] = createSignal<Definition[Type][]>([])
+		createEffect(async () => {
+			tracker[type][0]()
+			if (cacheEnabled) {
+				let records = await api.all()
+				set(records)
+			}
+		})
+		cache[type] = get
 	}
 
 	let notify = (type: string) => {
@@ -167,7 +183,6 @@ export function useIdb<Definition extends WireStoreDefinition>(
 
 	function publicApi(type: Type): WireStoreAPI<Definition, Type> {
 
-
 		function createReactiveApi<T extends Function>(fn: T): T {
 			let proxy = new Proxy(fn, {
 				apply(target, thisArg, args) {
@@ -262,7 +277,9 @@ export function useIdb<Definition extends WireStoreDefinition>(
 			getUnsynced: getRawUnhookedUnsyncedRecords,
 			put,
 			purge,
-			tracker
+			tracker,
+			cache,
+			enableCache: () => (cacheEnabled = true)
 		},
 	}
 }

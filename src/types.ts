@@ -1,5 +1,5 @@
 
-import { createContext, ParentProps, JSX } from "solid-js";
+import { createContext, ParentProps, JSX, Accessor } from "solid-js";
 import { Idb } from "./idb";
 
 // TODO: extract into a proper library
@@ -31,7 +31,6 @@ export type SyncedRecord = {
 
 export const WireStoreContext = createContext<WireStoreContextValue>()
 
-
 export type WireStoreContextValue = {
 	idb: Idb
 	sync(): Promise<void>
@@ -57,11 +56,16 @@ export type WireStore<Definition extends WireStoreDefinition> = {
 	[Type in keyof Definition & string]: WireStoreAPI<Definition, Type>
 } & {
 	utils: {
+		useCache: () => WireStoreCache<WireStoreDefinition>,
 		createReactiveApi: <T extends Function>(
 			trackingTypes: (keyof Definition & string)[],
 			fn: T
 		) => T
 	}
+}
+
+export type WireStoreCache<Definition extends WireStoreDefinition> = {
+	[Type in keyof Definition & string]: Accessor<Array<Definition[Type]>>
 }
 
 type Override<A, B> = Omit<A, keyof B> & B;

@@ -1039,3 +1039,4 @@ TBD: talk about erasing the data on logout? Encryption? Importance of validation
 - [ ] add support for partial syncing to avoid having to load the entire database
 - [ ] write docs on real-time syncing to show how to poke Solid Wire by calling `store.sync`
 - [ ] write docs on using Client View Record to optimize data size
+- [ ] write docs on how to use the built-in cache

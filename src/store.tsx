@@ -1,7 +1,8 @@
 import { isServer } from "solid-js/web"
 import { ExtendableWireStore, Hooks, WireStore, WireStoreConfig, WireStoreContext, WireStoreDefinition, WireStoreProvider } from "./types"
-import { ParentProps, Signal, useContext } from "solid-js"
+import { ParentProps, useContext } from "solid-js"
 import { WireStoreService } from "./service"
+
 
 export function createWireStore<Definition extends WireStoreDefinition, Extension>(
   config: WireStoreConfig<Definition, Extension>
@@ -44,6 +45,10 @@ export function createWireStore<Definition extends WireStoreDefinition, Extensio
     }
     if (config.extend) {
       (api as WireStore<Definition>).utils = {
+        useCache: () => {
+          context.idb.internal.enableCache()
+          return context.idb.internal.cache
+        },
         createReactiveApi: <T extends Function>(
           trackingTypes: (keyof Definition & string)[],
           fn: T
